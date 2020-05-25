@@ -15,7 +15,7 @@ data_path = os.path.join(os.path.expanduser('~'), 'Desktop')
 
 # Results path: Where the results and intermediate analyses of the tutorials are stored.
 # Change this path only if you wish to save your outputs to a different folder.
-results_path = os.path.join(os.path.expanduser('~'), 'Desktop/pca')
+results_path = os.path.join(os.path.expanduser('~'), 'Desktop/dimreduc')
 
 # Data path VDC dataset
 vdc_data_dir = os.path.join(data_path, 'vdc') 
@@ -312,7 +312,7 @@ def shift_timing(label_TR, TR_shift_size):
 def reshape_data(label_TR_shifted, masked_data_all):
     label_index = np.nonzero(label_TR_shifted)
     label_index = np.squeeze(label_index)
-    
+     
     # Pull out the indexes
     indexed_data = np.transpose(masked_data_all[:,label_index])
     nonzero_labels = label_TR_shifted[label_index] 
