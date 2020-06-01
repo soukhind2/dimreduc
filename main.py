@@ -24,7 +24,7 @@ import seaborn as sns
 from sklearn.model_selection import cross_val_score, cross_validate, PredefinedSplit
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
-from sklearn.feature_selection import SelectKBest, RFECV, f_classif
+#from sklearn.feature_selection import SelectKBest, RFECV, SelectKBestf_classif
 from sklearn.pipeline import Pipeline
 
 #%matplotlib inline
@@ -39,6 +39,7 @@ from utils import normalize, decode
 # load some constants
 from utils import vdc_data_dir, vdc_all_ROIs, vdc_label_dict, vdc_n_runs, vdc_hrf_lag, vdc_TR, vdc_TRs_run
 
+
 print('Here\'re some constants, which is specific for VDC data:')
 
 print('data dir = %s' % (vdc_data_dir))
@@ -50,8 +51,8 @@ print('HRF lag = %.2f sec' % (vdc_hrf_lag))
 print('num TRs per run = %d' % (vdc_TRs_run))
 
 #%%
-sub_id = 1
-mask_name = 'FFA' # This is set in order to reduce memory demands in order to run within 4Gb, however, if you want to make this run on whole brain, then set this to ''
+sub_id = 2
+mask_name = '' # This is set in order to reduce memory demands in order to run within 4Gb, however, if you want to make this run on whole brain, then set this to ''
 
 # Specify the subject name
 sub = 'sub-%.2d' % (sub_id)
@@ -91,13 +92,17 @@ bold_data, labels, run_ids = blockwise_sampling(bold_data_raw, labels_raw, run_i
 bold_normalized = normalize(bold_data, run_ids)
 
 #%%
-bold_cov = np.cov(bold_data)
-bold_corr = np.corrcoef(bold_data)
-bold_corr_norm = np.cov(bold_normalized)
+bold_cov = np.cov(bold_data[:,0:500].T)
+bold_corr = np.corrcoef(bold_data[:,0:500].T)
+bold_corr_norm = np.cov(bold_normalized[:,1000:1500].T)
 
-plt.imshow(bold_cov)
-plt.imshow(bold_corr)
-plt.imshow(bold_corr_norm)
+#plt.imshow(bold_cov)
+#plt.imshow(bold_corr)
+plt.imshow(bold_corr_norm,cmap = 'jet')
+plt.colorbar()
+plt.xlabel("Voxel #",size = 20)
+plt.ylabel("Voxel #",size = 20)
+plt.title("Correlation Matrix of 500 voxels",size = 20)
 #%%
 # We now use the PCA function in scikit-learn to reduce the dimensionality of the data
 # The number of components was chosen arbitrarily.
@@ -169,9 +174,7 @@ plt.title('Scree Plot')
 plt.xlabel('Principal Component')
 plt.ylabel('Eigenvalue')
 plt.xticks(np.arange(1,21))
-#I don't like the default legend so I typically make mine like below, e.g.
-#with smaller fonts and a bit transparent so I do not cover up data, and make
-#it moveable by the viewer in case upper-right is a bad place for it 
+
 leg = plt.legend(['Eigenvalues from PCA'], loc='best', 
                  shadow=False,markerscale=0.4)
 leg.get_frame().set_alpha(0.4)
@@ -204,3 +207,22 @@ models_pca, scores_pca = decode(bold_pca_normalized, labels, run_ids, svc)
 end = time()
 print('Accuracy: ', scores_pca)
 print('Run time: %0.4fs' %(end - start))
+
+#%% Pipeline
+
+# Set up the pipeline
+pipe = Pipeline([
+    ('reduce_dim', PCA(n_components=10)),
+    ('classify', SVC(kernel="linear", C=1)),
+])
+
+# Run the pipeline with cross-validation
+ps = PredefinedSplit(run_ids) # Provides train/test indices to split data in train/test sets
+clf_pipe = cross_validate(
+    pipe,bold_normalized,labels,cv=ps,
+    return_train_score=True
+)
+
+# Print results from this dimensionality reduction technique
+print(clf_pipe)
+print ("Average Testing Accuracy: %0.2f" % (np.mean(clf_pipe['test_score'])))
