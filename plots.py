@@ -42,10 +42,12 @@ ax.tick_params(axis='both', which='minor', labelsize=20)
 #%%
 #plot pca cross validation time
 fig = plt.figure()
+ax = fig.add_subplot(111)
+
 plt.style.use('seaborn-whitegrid')
 plt.plot(all_time[:,2])
 plt.xlabel("PCA Components",size = 20)
-plt.ylabel("Time",size = 20)
+plt.ylabel("Time (s)",size = 20)
 plt.title("TIme taken for SVM with 3 fold Cross Validation",size = 20)
 ax.tick_params(axis='both', which='major', labelsize=20)
 ax.tick_params(axis='both', which='minor', labelsize=20)
